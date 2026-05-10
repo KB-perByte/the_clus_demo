@@ -12,7 +12,7 @@
 # Supported actions: create, delete, update
 
 - name: Cisco VLAN self-service provisioning via webhook
-  hosts: all
+  hosts: ios
   sources:
     - name: Listen for webhook events
       ansible.eda.webhook:
