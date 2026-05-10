@@ -1,0 +1,15 @@
+---
+# requirements.yml
+# Install with: ansible-galaxy collection install -r requirements.yml
+
+collections:
+  - name: cisco.ios
+    version: ">=4.6.0"
+  - name: cisco.nxos
+    version: ">=4.4.0"
+  - name: ansible.eda
+    version: ">=1.4.0"
+  - name: ansible.netcommon
+    version: ">=5.1.0"
+  - name: ansible.utils
+    version: ">=2.10.0"

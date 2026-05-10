@@ -1,0 +1,143 @@
+---
+# Playbook: provision_nxos_vlan.yml
+#
+# Purpose: Create or remove a VLAN on a Cisco NXOS switch via webhook event
+# Called by: cisco_webhook_rulebook.yml
+#
+# Expected extra_vars (passed from EDA rulebook):
+#   vlan_action:   "create" or "delete"
+#   vlan_id:       VLAN number (string), e.g. "100"
+#   vlan_name:     Human-readable name, e.g. "PROD_SERVERS"
+#   target_switch: Inventory hostname, e.g. "nxos-sw-01"
+#   requested_by:  Identity of requestor for audit log
+
+- name: NXOS VLAN provisioning
+  hosts: "{{ target_switch }}"
+  gather_facts: false
+
+  vars:
+    ts: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
+    audit_log: "/opt/ansible/logs/vlan_audit.log"
+
+  tasks:
+
+    - name: Validate inputs
+      ansible.builtin.assert:
+        that:
+          - vlan_id is defined
+          - vlan_id | int > 0
+          - vlan_id | int < 4095
+          - vlan_action in ['create', 'delete']
+        fail_msg: >
+          Invalid inputs: vlan_id={{ vlan_id }}, vlan_action={{ vlan_action }}.
+          vlan_id must be 1-4094 and action must be 'create' or 'delete'.
+
+    - name: Check current VLAN database
+      cisco.nxos.nxos_command:
+        commands:
+          - "show vlan id {{ vlan_id }}"
+      register: vlan_check
+      ignore_errors: true
+
+    - name: Set VLAN existence fact
+      ansible.builtin.set_fact:
+        vlan_exists: "{{ 'active' in vlan_check.stdout[0] or 'suspend' in vlan_check.stdout[0] }}"
+
+    - name: Log pre-action state
+      ansible.builtin.debug:
+        msg:
+          - "Action:    {{ vlan_action }}"
+          - "VLAN ID:   {{ vlan_id }}"
+          - "VLAN Name: {{ vlan_name | default('not set') }}"
+          - "Exists:    {{ vlan_exists }}"
+          - "Requested by: {{ requested_by | default('unknown') }}"
+
+    # ------------------------------------------------------------------
+    # CREATE VLAN
+    # ------------------------------------------------------------------
+    - name: Create VLAN
+      cisco.nxos.nxos_vlans:
+        config:
+          - vlan_id: "{{ vlan_id | int }}"
+            name: "{{ vlan_name | default(omit) }}"
+            state: active
+        state: merged
+      when: vlan_action == "create"
+      register: create_result
+
+    - name: Verify VLAN was created
+      cisco.nxos.nxos_command:
+        commands:
+          - "show vlan id {{ vlan_id }}"
+        wait_for:
+          - "result[0] contains '{{ vlan_id }}'"
+        retries: 3
+        interval: 2
+      when: vlan_action == "create"
+      register: verify_create
+
+    # ------------------------------------------------------------------
+    # DELETE VLAN
+    # ------------------------------------------------------------------
+    - name: Abort delete if VLAN does not exist
+      ansible.builtin.fail:
+        msg: "VLAN {{ vlan_id }} does not exist on {{ inventory_hostname }} — nothing to delete."
+      when:
+        - vlan_action == "delete"
+        - not vlan_exists | bool
+
+    - name: Delete VLAN
+      cisco.nxos.nxos_vlans:
+        config:
+          - vlan_id: "{{ vlan_id | int }}"
+        state: deleted
+      when:
+        - vlan_action == "delete"
+        - vlan_exists | bool
+      register: delete_result
+
+    # ------------------------------------------------------------------
+    # Save configuration
+    # ------------------------------------------------------------------
+    - name: Save running config to startup
+      cisco.nxos.nxos_command:
+        commands:
+          - "copy running-config startup-config"
+
+    # ------------------------------------------------------------------
+    # Audit log
+    # ------------------------------------------------------------------
+    - name: Write audit log entry
+      ansible.builtin.lineinfile:
+        path: "{{ audit_log }}"
+        line: >
+          {{ ts }} | {{ vlan_action | upper }} | VLAN={{ vlan_id }}
+          name={{ vlan_name | default('N/A') }} | switch={{ inventory_hostname }}
+          | requested_by={{ requested_by | default('unknown') }}
+          | result={{ 'changed' if (create_result.changed or delete_result.changed) | default(false) else 'no-op' }}
+        create: true
+        mode: "0640"
+      delegate_to: localhost
+      ignore_errors: true
+
+    # ------------------------------------------------------------------
+    # Notify
+    # ------------------------------------------------------------------
+    - name: Notify - VLAN provisioned
+      ansible.builtin.uri:
+        url: "{{ notify_webhook_url }}"
+        method: POST
+        body_format: json
+        body:
+          text: >
+            {{ '✅' if vlan_action == 'create' else '🗑️' }}
+            *VLAN {{ vlan_action | upper }}* | `{{ inventory_hostname }}`
+            VLAN `{{ vlan_id }}` ({{ vlan_name | default('unnamed') }})
+            {{ 'provisioned' if vlan_action == 'create' else 'removed' }}
+            by `{{ requested_by | default('webhook') }}` at {{ ts }}
+      when: notify_webhook_url is defined
+      ignore_errors: true
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg: "VLAN {{ vlan_id }} {{ vlan_action }}d successfully on {{ inventory_hostname }}"

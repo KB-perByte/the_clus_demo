@@ -1,0 +1,11 @@
+---
+# Notification settings
+notify_email: "kbperbyte@gmail.com"
+notify_webhook_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+
+# Backup settings
+backup_root: "/opt/ansible/backups"
+
+# Remediation settings
+interface_admin_down_wait: 5    # seconds before re-enabling
+max_remediation_attempts: 3
