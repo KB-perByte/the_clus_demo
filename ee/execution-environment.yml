@@ -1,0 +1,44 @@
+---
+version: 3
+
+images:
+  base_image:
+    name: quay.io/aap/ansible-automation-platform-27/ee-minimal-rhel9:latest
+
+build_arg_defaults:
+  ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: '--pre'
+
+dependencies:
+  ansible_runner:
+    package_pip: ansible-runner
+
+  python_interpreter:
+    python_path: /usr/bin/python3.12
+
+  ansible_core:
+    package_pip: ansible-core
+
+  galaxy: ansible-collections.yml
+  python: python-packages.txt
+
+additional_build_files:
+  # Can be used to resolve collections from private automation hub
+  - src: ansible.cfg
+    dest: configs
+
+options:
+  package_manager_path: /usr/bin/microdnf
+
+additional_build_steps:
+  prepend_base:
+    #- COPY /home/sagpaul/Work/Playbooks/ee_s/meraki_ops/tmp/network-meraki_ops-1.0.0.tar /tmp/
+    - RUN $PYCMD -m pip install --upgrade pip setuptools
+  prepend_galaxy:
+    # Add custom ansible.cfg which defines collection install sources
+    - ADD _build/configs/ansible.cfg /etc/ansible/ansible.cfg
+    # AH_TOKEN is passed into the build command using a --build-arg
+    # accept this as an ARG during this stage to reference later
+    #- ARG AH_TOKEN
+    # Use the above ARG to define an environment variable holding
+    # the token for resolving private collections
+    # - ENV ANSIBLE_GALAXY_SERVER_AUTOMATION_HUB_TOKEN=

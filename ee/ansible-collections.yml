@@ -1,0 +1,10 @@
+---
+collections:
+  - name: cisco.meraki
+    version: 2.23.2
+  - name: network.meraki_ops
+    version: '>=1.0.0'
+  - name: cisco.ios
+  - name: cisco.nxos
+  - name: cisco.iosxr
+  - name: ansible.scm
