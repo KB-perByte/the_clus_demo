@@ -1,0 +1,41 @@
+---
+- name: Retrieve and publish SCM changes
+  hosts: localhost
+  gather_facts: true
+  vars:
+    # Override with -e scm_origin_url=... or set in inventory/group_vars
+    scm_origin_url: "https://github.com/KB-perByte/acls_mv"
+    scm_upstream_url: "https://github.com/KB-perByte/acls_mv"
+    scm_upstream_branch: master
+    scm_git_token: "{{ lookup('env', 'GITHUB_TOKEN') | default('', true) }}"
+  tasks:
+    - name: Retrieve repository from origin
+      ansible.scm.git_retrieve:
+        origin:
+          url: "{{ scm_origin_url }}"
+          token: "{{ scm_git_token | default(omit) }}"
+        upstream: "{{ {'url': scm_upstream_url, 'branch': scm_upstream_branch} if scm_upstream_url else omit }}"
+      register: repository
+
+    - name: Record Ansible run metadata in the repository
+      ansible.builtin.copy:
+        content: |
+          retrieved_at: {{ ansible_date_time.iso8601 }}
+          play: {{ ansible_play_name }}
+          branch: {{ repository.branch_name }}
+          path: {{ repository.path }}
+        dest: "{{ repository.path }}/ansible_run.yaml"
+        mode: "0644"
+
+    - name: Publish changes to origin
+      ansible.scm.git_publish:
+        path: "{{ repository.path }}"
+        token: "{{ scm_git_token | default(omit) }}"
+      register: publish
+
+    - name: Show repository details
+      ansible.builtin.debug:
+        msg:
+          path: "{{ repository.path }}"
+          branch: "{{ repository.branch_name }}"
+          publish: "{{ publish.msg }}"
