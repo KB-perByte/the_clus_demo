@@ -28,3 +28,23 @@
       ansible.builtin.debug:
         var: phase1_verify.stdout_lines[0]
     # Undo 01_ios_command_and_config.yml
+
+    # Undo 02_banner_from_file.yml
+    - name: Load MOTD text from flat file
+      ansible.builtin.set_fact:
+        motd_text: "{{ lookup('file', banner_file) }}"
+      vars:
+        banner_file: "{{ playbook_dir }}/../../files/banners/motd_undo.txt"
+
+    - name: Preview banner content (controller)
+      ansible.builtin.debug:
+        msg: "{{ motd_text.splitlines() }}"
+
+    - name: Configure banner from file
+      cisco.ios.ios_banner:
+        banner: motd
+        # Unix line endings (LF) in motd.txt — CRLF can break idempotency on IOS
+        text: "{{ motd_text }}"
+        state: present
+      register: banner_result
+    # Undo 02_banner_from_file.yml

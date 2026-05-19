@@ -12,6 +12,7 @@
   gather_facts: false
 
   vars:
+    cisco_live_artifact_root: "{{ playbook_dir }}/../artifacts"
     device_artifact_dir: "{{ cisco_live_artifact_root }}/{{ inventory_hostname }}"
 
   tasks:
