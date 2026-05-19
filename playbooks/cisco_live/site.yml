@@ -5,14 +5,6 @@
 #   ansible-playbook playbooks/cisco_live/site.yml -i inventory/cisco_live_hosts.yml --tags phase1
 
 - name: Import phase playbooks
-  ansible.builtin.import_playbook: 01_ios_command_and_config.yml
-  tags: [phase1, ios]
-
-- name: Import phase playbooks
-  ansible.builtin.import_playbook: 02_banner_from_file.yml
-  tags: [phase2, ios]
-
-- name: Import phase playbooks
   ansible.builtin.import_playbook: 03_ios_interfaces_gather.yml
   tags: [phase3, ios]
 
@@ -20,6 +12,3 @@
   ansible.builtin.import_playbook: 04_parse_and_compare_interfaces.yml
   tags: [phase4, ios]
 
-- name: Import phase playbooks
-  ansible.builtin.import_playbook: 05_meraki_validated_content.yml
-  tags: [phase5, meraki]
