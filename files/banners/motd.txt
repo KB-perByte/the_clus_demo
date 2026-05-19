@@ -1,4 +1,4 @@
 ************************************************************
-*  CISCO LIVE DEMO — AUTHORIZED ACCESS ONLY                *
+*  CISCO LIVE DEMO - AUTHORIZED ACCESS ONLY                *
 *  Managed by Ansible Automation Platform                  *
 ************************************************************
