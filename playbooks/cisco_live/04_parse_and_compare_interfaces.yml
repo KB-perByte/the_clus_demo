@@ -27,7 +27,6 @@
         running_config: "{{ interfaces_running_config_text }}"
         state: parsed
       register: interfaces_parsed
-      delegate_to: localhost
 
     - name: Gather live structured state from device
       cisco.ios.ios_interfaces:
