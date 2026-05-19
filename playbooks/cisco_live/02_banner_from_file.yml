@@ -21,12 +21,12 @@
       ansible.builtin.debug:
         msg: "{{ motd_text.splitlines() }}"
 
-    - name: Configure MOTD banner on device
+    - name: Configure banner from file
       cisco.ios.ios_banner:
-        config:
-          - banner: motd
-            text: "{{ motd_text }}"
-        state: merged
+        banner: motd
+        # Unix line endings (LF) in motd.txt — CRLF can break idempotency on IOS
+        text: "{{ motd_text }}"
+        state: present
       register: banner_result
 
     - name: Verify banner with ios_command
