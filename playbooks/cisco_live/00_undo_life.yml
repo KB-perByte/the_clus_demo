@@ -1,0 +1,30 @@
+---
+# Phase 0 — Undo 
+#
+# Run:
+#   ansible-playbook playbooks/cisco_live/00_undo_life.yml \
+#     -i inventory/cisco_live_hosts.yml
+
+- name: "Cisco Live Phase 0 — Undo Life"
+  hosts: ios
+  gather_facts: false
+
+  tasks:
+    # Undo 01_ios_command_and_config.yml
+    - name: Write interface description (ios_config)
+      cisco.ios.ios_config:
+        lines:
+          - "description {{ demo_interface_description }}"
+        parents: "interface {{ demo_interface }}"
+      register: phase1_write
+
+    - name: Confirm write via ios_command
+      cisco.ios.ios_command:
+        commands:
+          - "show running-config interface {{ demo_interface }}"
+      register: phase1_verify
+
+    - name: Show post-change interface stanza
+      ansible.builtin.debug:
+        var: phase1_verify.stdout_lines[0]
+    # Undo 01_ios_command_and_config.yml

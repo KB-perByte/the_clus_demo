@@ -8,8 +8,8 @@ ansible_become: true
 ansible_become_method: enable
 
 # Safe lab targets — override per host in host_vars if needed
-demo_interface: Loopback99
-demo_interface_description: "Ansible Cisco Live demo — resource module track"
+demo_interface: Loopback998
+demo_interface_description: "Ansible Cisco Live demo, resource module track"
 
 # Artifacts written on the controller during phases 3–4
 cisco_live_artifact_root: "{{ playbook_dir }}/../artifacts"

@@ -24,7 +24,7 @@
     - name: Configure MOTD banner on device
       cisco.ios.ios_banner:
         config:
-          - banner_type: motd
+          - banner: motd
             text: "{{ motd_text }}"
         state: merged
       register: banner_result
