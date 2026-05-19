@@ -1,0 +1,40 @@
+---
+# Phase 2 — Read MOTD text from a flat file and push to the same IOS device
+#
+# Run:
+#   ansible-playbook playbooks/cisco_live/02_banner_from_file.yml \
+#     -i inventory/cisco_live_hosts.yml
+
+- name: "Cisco Live Phase 2 — banner from flat file"
+  hosts: ios
+  gather_facts: false
+
+  vars:
+    banner_file: "{{ playbook_dir }}/../../files/banners/motd.txt"
+
+  tasks:
+    - name: Load MOTD text from flat file
+      ansible.builtin.set_fact:
+        motd_text: "{{ lookup('file', banner_file) }}"
+
+    - name: Preview banner content (controller)
+      ansible.builtin.debug:
+        msg: "{{ motd_text.splitlines() }}"
+
+    - name: Configure MOTD banner on device
+      cisco.ios.ios_banner:
+        config:
+          - banner_type: motd
+            text: "{{ motd_text }}"
+        state: merged
+      register: banner_result
+
+    - name: Verify banner with ios_command
+      cisco.ios.ios_command:
+        commands:
+          - show banner motd
+      register: banner_show
+
+    - name: Show live MOTD
+      ansible.builtin.debug:
+        var: banner_show.stdout_lines[0]

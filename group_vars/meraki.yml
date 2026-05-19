@@ -1,0 +1,5 @@
+---
+ansible_connection: local
+# Override in extra-vars or env; validated content roles expect API access
+meraki_api_key: "{{ lookup('env', 'MERAKI_API_KEY') | default('', true) }}"
+meraki_org_id: "828099381482762270"

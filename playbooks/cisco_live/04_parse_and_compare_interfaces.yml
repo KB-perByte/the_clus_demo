@@ -1,0 +1,63 @@
+---
+# Phase 4 — Parse running-config into structured data and compare to gathered state
+#
+# Prerequisite: run phase 3 first (uses saved running-config text).
+#
+# Run:
+#   ansible-playbook playbooks/cisco_live/04_parse_and_compare_interfaces.yml \
+#     -i inventory/cisco_live_hosts.yml
+
+- name: "Cisco Live Phase 4 — parsed running-config vs gathered interfaces"
+  hosts: ios
+  gather_facts: false
+
+  vars:
+    device_artifact_dir: "{{ cisco_live_artifact_root }}/{{ inventory_hostname }}"
+    running_config_file: "{{ device_artifact_dir }}/interfaces_running_config.txt"
+
+  tasks:
+    - name: Load saved running-config interface section
+      ansible.builtin.set_fact:
+        interfaces_running_config_text: "{{ lookup('file', running_config_file) }}"
+      delegate_to: localhost
+
+    - name: Parse running-config into structured interface data
+      cisco.ios.ios_interfaces:
+        running_config: "{{ interfaces_running_config_text }}"
+        state: parsed
+      register: interfaces_parsed
+      delegate_to: localhost
+
+    - name: Gather live structured state from device
+      cisco.ios.ios_interfaces:
+        state: gathered
+      register: interfaces_gathered
+
+    - name: Normalize lists for comparison (sort by interface name)
+      ansible.builtin.set_fact:
+        parsed_sorted: "{{ interfaces_parsed.parsed | sort(attribute='name') }}"
+        gathered_sorted: "{{ interfaces_gathered.gathered | sort(attribute='name') }}"
+
+    - name: Save parsed JSON alongside phase 3 artifacts
+      ansible.builtin.copy:
+        content: "{{ interfaces_parsed | to_nice_json }}"
+        dest: "{{ device_artifact_dir }}/interfaces_parsed.json"
+        mode: "0640"
+      delegate_to: localhost
+
+    - name: Assert gathered and parsed structures match
+      ansible.builtin.assert:
+        that:
+          - parsed_sorted == gathered_sorted
+        fail_msg: >-
+          Drift between ios_interfaces gathered and parsed running-config.
+          Inspect {{ device_artifact_dir }}/interfaces_*.json
+        success_msg: >-
+          Gathered state matches parsed running-config ({{ parsed_sorted | length }} interfaces).
+
+    - name: Comparison summary
+      ansible.builtin.debug:
+        msg:
+          parsed_count: "{{ parsed_sorted | length }}"
+          gathered_count: "{{ gathered_sorted | length }}"
+          artifacts: "{{ device_artifact_dir }}"

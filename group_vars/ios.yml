@@ -1,0 +1,15 @@
+---
+# Cisco IOS lab defaults for cisco_live demo playbooks
+ansible_connection: ansible.netcommon.network_cli
+ansible_network_os: cisco.ios.ios
+ansible_user: "{{ lookup('env', 'ANSIBLE_NETWORK_USER') | default('admin', true) }}"
+ansible_password: "{{ lookup('env', 'ANSIBLE_NETWORK_PASSWORD') }}"
+ansible_become: true
+ansible_become_method: enable
+
+# Safe lab targets — override per host in host_vars if needed
+demo_interface: Loopback99
+demo_interface_description: "Ansible Cisco Live demo — resource module track"
+
+# Artifacts written on the controller during phases 3–4
+cisco_live_artifact_root: "{{ playbook_dir }}/../artifacts"

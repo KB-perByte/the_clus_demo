@@ -1,2 +1,4 @@
 ee/context/
 ee/ansible-navigator.log
+artifacts/*
+!artifacts/.gitkeep

@@ -1,0 +1,41 @@
+---
+# Phase 1 — Cisco IOS read/write with ios_command and ios_config
+#
+# Run:
+#   ansible-playbook playbooks/cisco_live/01_ios_command_and_config.yml \
+#     -i inventory/cisco_live_hosts.yml
+
+- name: "Cisco Live Phase 1 — ios_command (read) and ios_config (write)"
+  hosts: ios
+  gather_facts: false
+
+  tasks:
+    - name: Read device identity and interface summary
+      cisco.ios.ios_command:
+        commands:
+          - show version | include IOS
+          - show ip interface brief
+      register: phase1_read
+
+    - name: Show read results
+      ansible.builtin.debug:
+        msg:
+          ios_version_line: "{{ phase1_read.stdout[0] | trim }}"
+          interface_brief: "{{ phase1_read.stdout[1].splitlines()[:8] }}"
+
+    - name: Write interface description (ios_config)
+      cisco.ios.ios_config:
+        lines:
+          - "description {{ demo_interface_description }}"
+        parents: "interface {{ demo_interface }}"
+      register: phase1_write
+
+    - name: Confirm write via ios_command
+      cisco.ios.ios_command:
+        commands:
+          - "show running-config interface {{ demo_interface }}"
+      register: phase1_verify
+
+    - name: Show post-change interface stanza
+      ansible.builtin.debug:
+        var: phase1_verify.stdout_lines[0]

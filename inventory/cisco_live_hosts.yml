@@ -1,0 +1,15 @@
+---
+# Example inventory for Cisco Live IOS + Meraki demos.
+# Set credentials via env: ANSIBLE_NETWORK_USER, ANSIBLE_NETWORK_PASSWORD
+# Meraki: MERAKI_API_KEY (or meraki_api_key in group_vars)
+
+all:
+  children:
+    ios:
+      hosts:
+        ios_lab:
+          ansible_host: 192.0.2.10
+    meraki:
+      hosts:
+        meraki_controller:
+          ansible_connection: local

@@ -1,0 +1,49 @@
+---
+# Phase 5 — Validated content pattern with network.meraki_ops + cisco.meraki
+#
+# Requires:
+#   - MERAKI_API_KEY in the environment (or meraki_api_key in group_vars)
+#   - EE with cisco.meraki and network.meraki_ops (see ee/ansible-collections.yml)
+#
+# Run:
+#   ansible-playbook playbooks/cisco_live/05_meraki_validated_content.yml \
+#     -i inventory/cisco_live_hosts.yml
+
+- name: "Cisco Live Phase 5a — Validated content role (admin_info)"
+  hosts: meraki
+  gather_facts: false
+  roles:
+    - role: network.meraki_ops.admin_info
+
+- name: "Cisco Live Phase 5b — Meraki API read + validation assertions"
+  hosts: meraki
+  gather_facts: false
+
+  vars:
+    meraki_organization_id: "{{ meraki_org_id | default('828099381482762270') }}"
+    meraki_page_size: 5
+
+  tasks:
+    - name: List organization devices (cisco.meraki collection)
+      cisco.meraki.devices_info:
+        meraki_suppress_logging: true
+        organizationId: "{{ meraki_organization_id }}"
+        perPage: "{{ meraki_page_size }}"
+        total_pages: 1
+      register: meraki_devices
+      no_log: true
+
+    - name: Validate API response shape (demo guardrails)
+      ansible.builtin.assert:
+        that:
+          - meraki_devices is defined
+          - meraki_devices.devices is defined
+          - meraki_devices.devices | length > 0
+          - meraki_devices.devices[0].serial is defined
+        fail_msg: Meraki devices_info returned an unexpected or empty payload.
+        success_msg: >-
+          Retrieved {{ meraki_devices.devices | length }} device(s) from org {{ meraki_organization_id }}.
+
+    - name: Show device summary (serials and names only)
+      ansible.builtin.debug:
+        msg: "{{ meraki_devices.devices | map(attribute='name') | list }}"

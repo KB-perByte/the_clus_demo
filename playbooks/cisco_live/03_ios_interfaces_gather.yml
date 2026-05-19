@@ -1,0 +1,58 @@
+---
+# Phase 3 — Resource module ios_interfaces (gathered) + running-config snapshot
+#
+# Saves both representations under artifacts/<hostname>/ for side-by-side review.
+#
+# Run:
+#   ansible-playbook playbooks/cisco_live/03_ios_interfaces_gather.yml \
+#     -i inventory/cisco_live_hosts.yml
+
+- name: "Cisco Live Phase 3 — ios_interfaces gathered vs running-config"
+  hosts: ios
+  gather_facts: false
+
+  vars:
+    device_artifact_dir: "{{ cisco_live_artifact_root }}/{{ inventory_hostname }}"
+
+  tasks:
+    - name: Ensure artifact directory exists on controller
+      ansible.builtin.file:
+        path: "{{ device_artifact_dir }}"
+        state: directory
+        mode: "0750"
+      delegate_to: localhost
+      run_once: false
+
+    - name: Gather structured interface state (source of truth)
+      cisco.ios.ios_interfaces:
+        state: gathered
+      register: interfaces_gathered
+
+    - name: Fetch interface section from running-config (CLI source)
+      cisco.ios.ios_command:
+        commands:
+          - show running-config | section ^interface
+      register: interfaces_running_config
+
+    - name: Save gathered JSON for comparison
+      ansible.builtin.copy:
+        content: "{{ interfaces_gathered | to_nice_json }}"
+        dest: "{{ device_artifact_dir }}/interfaces_gathered.json"
+        mode: "0640"
+      delegate_to: localhost
+
+    - name: Save running-config interface section
+      ansible.builtin.copy:
+        content: "{{ interfaces_running_config.stdout[0] }}"
+        dest: "{{ device_artifact_dir }}/interfaces_running_config.txt"
+        mode: "0640"
+      delegate_to: localhost
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg:
+          gathered_interface_count: "{{ interfaces_gathered.gathered | length }}"
+          artifact_dir: "{{ device_artifact_dir }}"
+          files:
+            - interfaces_gathered.json
+            - interfaces_running_config.txt
