@@ -36,14 +36,14 @@
     - name: Validate API response shape (demo guardrails)
       ansible.builtin.assert:
         that:
-          - meraki_devices is defined
-          - meraki_devices.devices is defined
-          - meraki_devices.devices | length > 0
-          - meraki_devices.devices[0].serial is defined
+          - meraki_devices.meraki_response is defined
+          - meraki_devices.meraki_response | length > 0
+          - meraki_devices.meraki_response[0].name is defined
+          - meraki_devices.meraki_response[0].model is defined
         fail_msg: Meraki devices_info returned an unexpected or empty payload.
         success_msg: >-
-          Retrieved {{ meraki_devices.devices | length }} device(s) from org {{ meraki_organization_id }}.
+          Retrieved {{ meraki_devices.meraki_response | length }} device(s) from org {{ meraki_organization_id }}.
 
-    - name: Show device summary (serials and names only)
+    - name: Show device summary (names and models)
       ansible.builtin.debug:
-        msg: "{{ meraki_devices.devices | map(attribute='name') | list }}"
+        msg: "{{ meraki_devices.meraki_response | map(attribute='name') | list }}"
