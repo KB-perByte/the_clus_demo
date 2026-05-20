@@ -9,6 +9,10 @@
   hosts: ios
   gather_facts: false
 
+  vars:
+    demo_interface: Loopback998
+    demo_interface_description: "Ansible Cisco Live demo, resource module track"
+
   tasks:
     # Undo 01_ios_command_and_config.yml
     - name: Write interface description (ios_config)
