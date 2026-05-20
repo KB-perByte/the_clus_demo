@@ -26,12 +26,12 @@
   tasks:
     - name: List organization devices (cisco.meraki collection)
       cisco.meraki.devices_info:
-        meraki_suppress_logging: true
+        # meraki_suppress_logging: true
         organizationId: "{{ meraki_organization_id }}"
         perPage: "{{ meraki_page_size }}"
         total_pages: 1
       register: meraki_devices
-      no_log: true
+      # no_log: true
 
     - name: Validate API response shape (demo guardrails)
       ansible.builtin.assert:
