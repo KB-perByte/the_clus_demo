@@ -1,0 +1,47 @@
+---
+# Phase 6 — Validated content use case: network.meraki_ops only (no direct cisco.meraki tasks)
+#
+# Mirrors collection playbooks/reports_devices.yaml — device inventory report via
+# report role + report_view filter plugin.
+#
+# Requires: MERAKI_API_KEY (or meraki_api_key), meraki_org_id in group_vars/meraki.yml
+#
+# Run:
+#   ansible-playbook playbooks/cisco_live/06_meraki_ops_usecase.yml \
+#     -i inventory/cisco_live_hosts.yml
+
+- name: "Cisco Live Phase 6 — meraki_ops device report (validated content)"
+  hosts: meraki
+  gather_facts: false
+
+  vars:
+    meraki_report_category: devices
+
+  roles:
+    - role: network.meraki_ops.report
+      category: "{{ meraki_report_category }}"
+
+  tasks:
+    - name: Validate meraki_ops report output
+      ansible.builtin.assert:
+        that:
+          - my_org_report_data is defined
+          - my_org_report_data.devices_report is defined
+          - my_org_report_data.devices_report | length > 0
+        fail_msg: >-
+          network.meraki_ops.report did not produce devices_report data.
+          Check API key scope and meraki_org_id.
+        success_msg: >-
+          meraki_ops report: {{ my_org_report_data.devices_report | length }} device(s) in org {{ meraki_org_id }}.
+
+    - name: Show device inventory summary from report_view filter
+      ansible.builtin.debug:
+        msg:
+          report_category: "{{ meraki_report_category }}"
+          devices: "{{ my_org_report_data.devices_report.values() | map(attribute='name') | list }}"
+
+    - name: Note artifact path (written by the report role on the execution node)
+      ansible.builtin.debug:
+        msg: >-
+          Full YAML dump: {{ playbook_dir }}/report_data_file.yaml
+          (ephemeral on AAP unless copied from the job environment)
