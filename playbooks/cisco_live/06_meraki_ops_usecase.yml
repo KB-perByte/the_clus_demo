@@ -11,11 +11,15 @@
 #     -i inventory/cisco_live_hosts.yml
 
 - name: "Cisco Live Phase 6 — meraki_ops device report (validated content)"
-  hosts: meraki
+  hosts: localhost
   gather_facts: false
 
   vars:
-    meraki_report_category: devices
+    meraki_report_category: all
+    # Set org id (Dashboard: Organization > Settings > Organization ID)
+    meraki_org_id: "828099381482762270"
+    # API key from env; cisco.meraki modules also accept MERAKI_DASHBOARD_API_KEY
+    meraki_api_key: "{{ lookup('env', 'MERAKI_DASHBOARD_API_KEY') | default(lookup('env', 'MERAKI_API_KEY'), true) }}"
 
   roles:
     - role: network.meraki_ops.report
