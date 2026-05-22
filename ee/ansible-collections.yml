@@ -2,9 +2,10 @@
 collections:
   - name: cisco.meraki
     version: 2.23.2
-  - name: network.meraki_ops
-    version: '>=1.0.0'
   - name: cisco.ios
   - name: cisco.nxos
   - name: cisco.iosxr
   - name: ansible.scm
+  - name: git+https://github_pat_11Assssssssssssssssssssssssslyv@github.com/ansible-collections/network.meraki_ops.git
+    type: git
+    version: fix_filter
