@@ -31,6 +31,7 @@
     scm_git_token: "{{ lookup('env', 'GITHUB_TOKEN') | default('', true) }}"
     meraki_report_repo_subpath: "reports/meraki_org_{{ meraki_org_id }}_report.yaml"
     meraki_report_html_repo_subpath: "reports/meraki_org_{{ meraki_org_id }}_report.html"
+    meraki_report_repo_dir: "reports"
 
   roles:
     - role: network.meraki_ops.report
@@ -93,9 +94,9 @@
       ansible.scm.git_publish:
         path: "{{ meraki_report_repository.path }}"
         token: "{{ scm_git_token | default(omit) }}"
+        # git_publish joins include paths into one arg; use a single directory pathspec
         include:
-          - "{{ meraki_report_repo_subpath }}"
-          - "{{ meraki_report_html_repo_subpath }}"
+          - "{{ meraki_report_repo_dir }}/"
         commit:
           message: >-
             Meraki device report for org {{ meraki_org_id }}
