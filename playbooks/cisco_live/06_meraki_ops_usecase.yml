@@ -64,6 +64,12 @@
         upstream: "{{ {'url': scm_upstream_url, 'branch': scm_upstream_branch} if scm_upstream_url else omit }}"
       register: meraki_report_repository
 
+    - name: Ensure report directory exists in the retrieved repository
+      ansible.builtin.file:
+        path: "{{ meraki_report_repository.path }}/{{ meraki_report_repo_subpath | dirname }}"
+        state: directory
+        mode: "0755"
+
     - name: Copy Meraki report into the retrieved repository
       ansible.builtin.copy:
         src: "{{ meraki_report_local_path }}"
