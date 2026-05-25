@@ -25,7 +25,7 @@
     # Override with -e scm_origin_url=... or set in inventory/group_vars
     scm_origin_url: "https://github.com/KB-perByte/clus_reports"
     scm_upstream_url: "https://github.com/KB-perByte/clus_reports"
-    scm_upstream_branch: master
+    scm_upstream_branch: main
     scm_git_token: "{{ lookup('env', 'GITHUB_TOKEN') | default('', true) }}"
     meraki_report_repo_subpath: "reports/meraki_org_{{ meraki_org_id }}_report.yaml"
 
